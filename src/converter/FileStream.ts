@@ -44,39 +44,36 @@ export class FileStream extends Transform {
   private async readZip(file: string): Promise<void> {
     return new Promise((resolve, reject) => {
       console.log("Processing zip " + file);
-      try{
-        yauzl.open(file, { lazyEntries: true }, (err, zip) => {
-          if (err || !zip) {
-            return reject(err);
-          }
 
-          zip.readEntry();
-          zip.on("close", resolve);
-          zip.on("entry", entry => {
-            if (entry.fileName.toLowerCase().endsWith(".xml")) {
-              console.log("Processing " + entry.fileName);
+      yauzl.open(file, { lazyEntries: true }, (err, zip) => {
+        if (err || !zip) {
+          return reject(err);
+        }
 
-              zip.openReadStream(entry, async (error, stream) => {
-                if (error || !stream)  {
-                  console.log(error);
-                } else {
-                  try {
-                    this.push(await this.streamToString(stream));
-                  } catch (e) {
-                    console.log(e);
-                  }
+        zip.readEntry();
+        zip.on("close", resolve);
+        zip.on("entry", entry => {
+          if (entry.fileName.toLowerCase().endsWith(".xml")) {
+            console.log("Processing " + entry.fileName);
+
+            zip.openReadStream(entry, async (error, stream) => {
+              if (error || !stream)  {
+                console.log(error);
+              } else {
+                try {
+                  this.push(await this.streamToString(stream));
+                } catch (e) {
+                  console.log(e);
                 }
+              }
 
-                zip.readEntry();
-              });
-            } else {
               zip.readEntry();
-            }
-          });
+            });
+          } else {
+            zip.readEntry();
+          }
         });
-      }catch(err){
-        reject(`${file} could not be processed: ${err}`);
-      }
+      });
     });
   }
 
