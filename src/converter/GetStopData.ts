@@ -38,28 +38,33 @@ export class GetStopData {
 
   private async getStopsCsvStream(filename: string): Promise<ReadableStream> {
     return new Promise((resolve, reject) => {
-      yauzl.open(filename, { lazyEntries : true}, (err, zip) => {
-        if (err || !zip) {
-          return reject(err);
-        }
-
-        zip.readEntry();
-        zip.on("entry", entry => {
-          if (entry.fileName === "Stops.csv") {
-            zip.openReadStream(entry, (error, readStream) => {
-              if (error || !readStream) {
-                return reject(error);
-              }
-
-              readStream.on("end", () => zip.readEntry());
-              resolve(readStream);
-            });
-          } else {
-            zip.readEntry();
+      try {
+        yauzl.open(filename, { lazyEntries : true}, (err, zip) => {
+          if (err || !zip) {
+            return reject(err);
           }
+
+          zip.readEntry();
+          zip.on("entry", entry => {
+            if (entry.fileName === "Stops.csv") {
+              zip.openReadStream(entry, (error, readStream) => {
+                if (error || !readStream) {
+                  return reject(error);
+                }
+
+                readStream.on("end", () => zip.readEntry());
+                resolve(readStream);
+              });
+            } else {
+              zip.readEntry();
+            }
+          });
         });
-      });
+      }catch(err){
+        reject(`${filename} could not be processed: ${err}`);
+      }
     });
+    
   }
 
 }
